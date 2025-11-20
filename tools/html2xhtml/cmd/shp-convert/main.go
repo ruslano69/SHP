@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ruslano69/shp/html2xhtml/pkg/converter"
+	"github.com/ruslano69/shp/tools/html2xhtml/pkg/converter"
 )
 
 type Stats struct {

@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ruslano69/shp/html2xhtml/middleware"
-	"github.com/ruslano69/shp/html2xhtml/pkg/converter"
+	"github.com/ruslano69/shp/tools/html2xhtml/middleware"
+	"github.com/ruslano69/shp/tools/html2xhtml/pkg/converter"
 )
 
 func main() {
