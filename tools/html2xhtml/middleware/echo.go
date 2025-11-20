@@ -3,6 +3,7 @@ package middleware
 
 import (
 	"bytes"
+	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -82,7 +83,7 @@ func EchoMiddleware(config Config) echo.MiddlewareFunc {
 }
 
 type echoResponseWriter struct {
-	echo.ResponseWriter
+	http.ResponseWriter
 	body *bytes.Buffer
 }
 
