@@ -59,18 +59,21 @@ const (
 
 // DefaultConverter реализация конвертера
 type DefaultConverter struct{
-	metrics Metrics
+	metrics      Metrics
+	preValidator *PreValidator
 }
 
 func New() Converter {
 	return &DefaultConverter{
-		metrics: &NoOpMetrics{},
+		metrics:      &NoOpMetrics{},
+		preValidator: NewPreValidator(),
 	}
 }
 
 func NewWithMetrics(metrics Metrics) Converter {
 	return &DefaultConverter{
-		metrics: metrics,
+		metrics:      metrics,
+		preValidator: NewPreValidator(),
 	}
 }
 
@@ -79,43 +82,100 @@ func (c *DefaultConverter) Convert(input []byte, opts Options) (*Result, error) 
 		OriginalSize: int64(len(input)),
 	}
 
-	// Парсинг HTML
+	// ШАГ 1: Пре-валидация для StrictMode (обнаружение проблем ДО нормализации парсером)
+	if opts.StrictMode || opts.AutoFix {
+		issues := c.preValidator.Validate(string(input))
+
+		if opts.StrictMode && len(issues) > 0 {
+			// В строгом режиме первая же проблема - это ошибка
+			issue := issues[0]
+			return nil, NewError(ErrValidationFailed, issue.Message+": "+issue.Original, nil)
+		}
+
+		// Конвертируем issues в Changes для отслеживания
+		if opts.AutoFix {
+			for _, issue := range issues {
+				changeType := ChangeUnclosedTag
+				switch issue.Type {
+				case IssueUppercaseTag:
+					changeType = ChangeUppercaseTag
+				case IssueUppercaseAttr, IssueUnquotedAttr:
+					changeType = ChangeUnquotedAttr
+				case IssueUnclosedVoid:
+					changeType = ChangeUnclosedTag
+				}
+
+				result.Changes = append(result.Changes, Change{
+					Type:     changeType,
+					Message:  issue.Message,
+					Original: issue.Original,
+					Fixed:    issue.Fixed,
+				})
+			}
+		}
+	}
+
+	// ШАГ 2: Парсинг HTML (парсер нормализует автоматически)
 	doc, err := html.Parse(bytes.NewReader(input))
 	if err != nil {
+		if c.metrics != nil {
+			c.metrics.RecordError(ErrParseFailed)
+		}
 		if opts.StrictMode {
-			return nil, err
+			return nil, NewError(ErrParseFailed, "failed to parse HTML", err)
 		}
 		result.Errors = append(result.Errors, err)
 	}
 
-	// Валидация и исправление
-	if opts.AutoFix {
-		c.fixNode(doc, result, opts)
-	} else if err := c.validateNode(doc, result); err != nil {
-		if opts.StrictMode {
-			return nil, err
+	// ШАГ 3: Валидация структуры (после парсинга)
+	if !opts.AutoFix {
+		if err := c.validateNode(doc, result); err != nil {
+			if c.metrics != nil {
+				c.metrics.RecordError(ErrValidationFailed)
+			}
+			if opts.StrictMode {
+				return nil, NewError(ErrValidationFailed, "validation failed", err)
+			}
 		}
 	}
 
-	// Сериализация в XHTML
+	// ШАГ 4: Сериализация в XHTML
 	var buf bytes.Buffer
 	if err := c.renderXHTML(doc, &buf, opts); err != nil {
-		return nil, err
+		if c.metrics != nil {
+			c.metrics.RecordError(ErrConversionFailed)
+		}
+		return nil, NewError(ErrConversionFailed, "failed to render XHTML", err)
 	}
 
 	result.Output = buf.Bytes()
 	result.FinalSize = int64(len(result.Output))
 	result.Success = len(result.Errors) == 0
-	
+
+	// Записываем метрики
+	if c.metrics != nil {
+		for _, change := range result.Changes {
+			c.metrics.RecordChange(change.Type)
+		}
+	}
+
 	return result, nil
 }
 
 func (c *DefaultConverter) Validate(input []byte) error {
+	// Пре-валидация: проверка исходного HTML
+	issues := c.preValidator.Validate(string(input))
+	if len(issues) > 0 {
+		issue := issues[0]
+		return NewError(ErrValidationFailed, issue.Message+": "+issue.Original, nil)
+	}
+
+	// Парсинг и валидация структуры
 	doc, err := html.Parse(bytes.NewReader(input))
 	if err != nil {
-		return err
+		return NewError(ErrParseFailed, "failed to parse HTML", err)
 	}
-	
+
 	result := &Result{}
 	return c.validateNode(doc, result)
 }
