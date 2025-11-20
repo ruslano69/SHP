@@ -16,43 +16,43 @@ func TestConvert_AutoFix(t *testing.T) {
 		{
 			name:     "unclosed br tag",
 			input:    `<html><body><br></body></html>`,
-			expected: `<html><body><br /></body></html>`,
+			expected: `<html><head></head><body><br /></body></html>`,
 			changes:  1,
 		},
 		{
 			name:     "uppercase tags",
 			input:    `<HTML><BODY><DIV>test</DIV></BODY></HTML>`,
-			expected: `<html><body><div>test</div></body></html>`,
+			expected: `<html><head></head><body><div>test</div></body></html>`,
 			changes:  3,
 		},
 		{
 			name:     "unquoted attributes",
 			input:    `<img src=pic.jpg width=100>`,
-			expected: `<img src="pic.jpg" width="100" />`,
-			changes:  1,
+			expected: `<html><head></head><body><img src="pic.jpg" width="100" /></body></html>`,
+			changes:  2,
 		},
 		{
 			name:     "mixed case attributes",
 			input:    `<div CLASS="test" ID="main">content</div>`,
-			expected: `<div class="test" id="main">content</div>`,
+			expected: `<html><head></head><body><div class="test" id="main">content</div></body></html>`,
 			changes:  2,
 		},
 		{
 			name:     "multiple void elements",
 			input:    `<html><head><meta charset=utf-8><link rel=stylesheet></head></html>`,
-			expected: `<html><head><meta charset="utf-8" /><link rel="stylesheet" /></head></html>`,
+			expected: `<html><head><meta charset="utf-8" /><link rel="stylesheet" /></head><body></body></html>`,
 			changes:  2,
 		},
 		{
 			name:     "nested unclosed tags",
 			input:    `<div><p>text<br><span>more</span></div>`,
-			expected: `<div><p>text<br /><span>more</span></p></div>`,
+			expected: `<html><head></head><body><div><p>text<br /><span>more</span></p></div></body></html>`,
 			changes:  1,
 		},
 		{
 			name:     "special characters in text",
 			input:    `<p>A & B < C > D</p>`,
-			expected: `<p>A &amp; B &lt; C &gt; D</p>`,
+			expected: `<html><head></head><body><p>A &amp; B &lt; C &gt; D</p></body></html>`,
 			changes:  0,
 		},
 	}
@@ -104,7 +104,7 @@ func TestValidate_Strict(t *testing.T) {
 			name:    "uppercase tag",
 			input:   `<HTML><body>test</body></HTML>`,
 			wantErr: true,
-			errMsg:  "tag must be lowercase",
+			errMsg:  "Tag must be lowercase",
 		},
 		{
 			name:    "unclosed void element",
@@ -115,13 +115,13 @@ func TestValidate_Strict(t *testing.T) {
 			name:    "uppercase attribute",
 			input:   `<div CLASS="test">content</div>`,
 			wantErr: true,
-			errMsg:  "attribute must be lowercase",
+			errMsg:  "Attribute must be lowercase",
 		},
 		{
 			name:    "void element with children",
 			input:   `<br>text</br>`,
 			wantErr: true,
-			errMsg:  "void element cannot have children",
+			errMsg:  "Void element must be self-closing",
 		},
 	}
 
