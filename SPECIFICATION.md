@@ -97,51 +97,51 @@ SHP makes XHTML practical by:
 
 ### 3.1 Architecture
 ```
-┌─────────────────┐
-│  Origin Server  │
-│                 │
-│ 1. Generate     │
-│    HTML         │
-│                 │
-│ 2. Validate     │
-│    (strict)     │
-│                 │
-│ 3. Sign with    │
-│    private key  │
-│                 │
-│ 4. Add headers  │
-└────────┬────────┘
-         │ HTTPS (TLS)
-         ▼
-┌─────────────────┐
-│  Intermediary   │
-│  (CDN/Proxy)    │
-│                 │
-│ - Forwards      │
-│   unchanged     │
-│ - Cannot modify │
-│   without       │
-│   detection     │
-└────────┬────────┘
-         │ HTTPS (TLS)
-         ▼
-┌─────────────────┐
-│   User Agent    │
-│   (Browser)     │
-│                 │
-│ 5. Extract      │
-│    signature    │
-│                 │
-│ 6. Get pubkey   │
-│    from TLS     │
-│                 │
-│ 7. Verify       │
-│    signature    │
-│                 │
-│ 8. Enable       │
-│    strict mode  │
-│    (if valid)   │
-└─────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Origin Server  â”‚
+â”‚                 â”‚
+â”‚ 1. Generate     â”‚
+â”‚    HTML         â”‚
+â”‚                 â”‚
+â”‚ 2. Validate     â”‚
+â”‚    (strict)     â”‚
+â”‚                 â”‚
+â”‚ 3. Sign with    â”‚
+â”‚    private key  â”‚
+â”‚                 â”‚
+â”‚ 4. Add headers  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         â”‚ HTTPS (TLS)
+         â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚  Intermediary   â”‚
+â”‚  (CDN/Proxy)    â”‚
+â”‚                 â”‚
+â”‚ - Forwards      â”‚
+â”‚   unchanged     â”‚
+â”‚ - Cannot modify â”‚
+â”‚   without       â”‚
+â”‚   detection     â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+         â”‚ HTTPS (TLS)
+         â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   User Agent    â”‚
+â”‚   (Browser)     â”‚
+â”‚                 â”‚
+â”‚ 5. Extract      â”‚
+â”‚    signature    â”‚
+â”‚                 â”‚
+â”‚ 6. Get pubkey   â”‚
+â”‚    from TLS     â”‚
+â”‚                 â”‚
+â”‚ 7. Verify       â”‚
+â”‚    signature    â”‚
+â”‚                 â”‚
+â”‚ 8. Enable       â”‚
+â”‚    strict mode  â”‚
+â”‚    (if valid)   â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
 ### 3.2 Workflow
@@ -475,13 +475,13 @@ When signature is valid, browser MUST:
 
 4. **Log Success Event:**
 ```javascript
-   console.log('[SHP] ✓ Valid signature. Strict mode enabled.');
+   console.log('[SHP] âœ“ Valid signature. Strict mode enabled.');
 ```
 ### 7.1.1 Strict Parser = XHTML Parser
 
 When signature is valid, browser MUST use **XHTML parsing mode:**
 
-- **No error recovery:** Single malformed tag → parsing stops
+- **No error recovery:** Single malformed tag â†’ parsing stops
 - **XML rules apply:** Case-sensitive, all tags must close
 - **Deterministic behavior:** Identical DOM tree across all browsers
 - **Performance:** 20-30% faster (no heuristic guessing)
@@ -511,7 +511,7 @@ When signature is invalid or missing, browser MUST:
 
 4. **Log Failure Event (if signature present but invalid):**
 ```javascript
-   console.warn('[SHP] ✗ Invalid signature. Legacy mode active.');
+   console.warn('[SHP] âœ— Invalid signature. Legacy mode active.');
 ```
 
 ### 7.3 Performance Optimization
@@ -609,8 +609,8 @@ When signature is invalid or missing, browser MUST:
 
 **Net Performance Impact:**
 - Signature overhead: +2-4 ms total (one-time)
-- Strict parsing savings: -10-50 ms (every render)
-- **Result:** 10-48 ms faster page load
+- Initial parsing: Similar to HTML5 (browsers use existing parsers)
+- **Future optimization potential:** See section 9.4
 
 ### 9.2 Bandwidth Overhead
 
@@ -637,6 +637,37 @@ When signature is invalid or missing, browser MUST:
 - Sign on-the-fly
 - Consider edge signing (if CDN trusted)
 - Cache verification result client-side
+
+### 9.4 Evolutionary Performance Advantage
+
+**Current State (Initial Implementation):**
+- Browsers cannot trust incoming HTML content
+- Parsers perform defensive checks at every step
+- Must prepare for errors and ambiguities in untrusted input
+- SHP-signed content initially parsed with same caution
+
+**Future State (Optimized Implementation):**
+When browsers develop trust in SHP-signed content, they can implement optimized "trusted-content" parsers:
+
+- **Fast-path parser:** Skip defensive error-checking for signed content
+- **Reduced validation:** Pre-validated content requires fewer runtime checks
+- **Memory efficiency:** No need to maintain error recovery state
+- **Predictable behavior:** Deterministic parsing enables aggressive optimizations
+
+**Analogy:** Similar to difference between parsing "untrusted user input" vs "compiler-verified code"
+
+**Expected Timeline:**
+1. **Phase 1 (Years 1-2):** Minimal performance difference - browsers use existing parsers
+2. **Phase 2 (Years 3-5):** Browser vendors implement SHP-optimized parsers
+3. **Phase 3 (Years 5+):** Significant performance gains (estimated 15-30% faster parsing)
+
+**Key Insight:** Performance advantage emerges as ecosystem matures and browsers invest in SHP-specific optimizations. This creates positive feedback loop: better performance → more adoption → more optimization investment.
+
+**Requirements for optimization:**
+- Sufficient SHP adoption (>10% of sites)
+- Browser vendor commitment to optimization
+- Benchmark data proving optimization value
+- No regressions for non-SHP content
 
 ---
 

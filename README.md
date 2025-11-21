@@ -115,9 +115,9 @@ html
 
 ### Performance Benefits
 
-- **Faster parsing:** 20-30% speed improvement (strict parser removes error recovery)
-- **Lower memory usage:** 15-25% reduction (no ambiguous state tracking)
-- **Better compression:** Valid HTML compresses more efficiently
+- **Deterministic parsing:** Identical DOM structure across all browsers
+- **Reduced attack surface:** No parser ambiguity exploits
+- **Future performance:** Browsers can optimize trusted-content parsers (see spec § 9.4)
 
 ### Developer Experience
 
@@ -238,7 +238,7 @@ A: HTTPS protects the channel (client ↔ CDN). SHP protects the content (origin
 A: SXG requires special certificates and focuses on prefetching. SHP uses standard TLS certs and focuses on parsing security.
 
 **Q: What's the performance overhead?**  
-A: Signature verification: ~1-2ms. Strict parsing savings: ~10-50ms. Net gain.
+A: Signature verification: ~1-2ms. Initial parsing: similar to HTML5. Future: browsers can optimize for trusted content (potentially 15-30% faster when ecosystem matures).
 
 **Q: Who will adopt this?**  
 A: Government regulation (like GDPR) can mandate SHP for public portals. Financial/healthcare sectors adopt for compliance.
