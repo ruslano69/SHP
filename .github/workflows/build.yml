@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'shp-signer.go'
+      - 'tools/shp-signer.go'
       - '.github/workflows/build.yml'
   workflow_dispatch:
 
@@ -12,41 +12,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
       
+      - name: Create bin directory
+        run: mkdir -p bin
+      
       - name: Build for Linux
         run: |
-          GOOS=linux GOARCH=amd64 go build -o bin/shp-signer-linux-amd64 shp-signer.go
+          GOOS=linux GOARCH=amd64 go build -o bin/shp-signer-linux-amd64 tools/shp-signer.go
           chmod +x bin/shp-signer-linux-amd64
       
       - name: Build for Windows
         run: |
-          GOOS=windows GOARCH=amd64 go build -o bin/shp-signer-windows-amd64.exe shp-signer.go
+          GOOS=windows GOARCH=amd64 go build -o bin/shp-signer-windows-amd64.exe tools/shp-signer.go
       
       - name: Build for macOS Intel
         run: |
-          GOOS=darwin GOARCH=amd64 go build -o bin/shp-signer-macos-intel shp-signer.go
+          GOOS=darwin GOARCH=amd64 go build -o bin/shp-signer-macos-intel tools/shp-signer.go
           chmod +x bin/shp-signer-macos-intel
       
       - name: Build for macOS Apple Silicon
         run: |
-          GOOS=darwin GOARCH=arm64 go build -o bin/shp-signer-macos-arm64 shp-signer.go
+          GOOS=darwin GOARCH=arm64 go build -o bin/shp-signer-macos-arm64 tools/shp-signer.go
           chmod +x bin/shp-signer-macos-arm64
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: shp-signer-binaries
           path: bin/*
       
       - name: Create Release
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.0-demo
           name: SHP Signer v1.0.0
